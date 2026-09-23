@@ -13,14 +13,14 @@ from Src.Logging.logger_factory import Logger_factory
 logger = Logger_factory()(__name__)
 
 
-class ProjectDecoder:
+class ProjectDecoder(json.JSONDecoder):
     """
-    Восстановление графа из сохранённого JSON. Симметричен связке
+    Восстанавливает граф из JSON: узлы строятся в object_hook по мере разбора,
+    связи — отдельным проходом после decode(), т.к. в файле порядок BFS, а не
+    порядок, безопасный для резолва связей (отправитель может встретиться позже получателя).
 
-    * ``build_node(annotation) -> node_tag`` — построить узел по аннотации;
-    * ``resolve_annotation(label) -> NodeAnnotation | None`` — найти аннотацию по
-      label в актуальном ``node_list``;
-    * ``link(sender_attr, receiver_attr) -> None`` — создать связь между пинами.
+    Колбэки: build_node(annotation) -> tag, resolve_annotation(label) -> NodeAnnotation | None,
+    link(sender_attr, receiver_attr).
     """
 
     DESERIALIZERS: dict = {
@@ -33,6 +33,11 @@ class ProjectDecoder:
         self.build_node = build_node
         self.resolve_annotation = resolve_annotation
         self.link = link
+
+        self.old_to_new: dict = {}  # сохранённый tag -> tag воссозданного узла
+        self.pending_links: list = []  # (receiver_tag, [link, ...]) для второго прохода
+
+        super().__init__(object_hook=self._object_hook)
 
     @classmethod
     def deserialize_value(cls, hint: Any, value: Any) -> Any:
@@ -52,35 +57,35 @@ class ProjectDecoder:
 
     def load(self, filepath: Path | str) -> list:
         """
-        Читает JSON и воссоздаёт узлы и связи в два прохода: сначала все узлы, затем
-        все связи. Второй проход не зависит от порядка узлов в файле — отправитель
-        любой связи к этому моменту уже создан.
+        Читает файл и разбирает его встроенным ``json.JSONDecoder.decode()``: узлы
+        строятся прямо в ``object_hook`` по мере разбора. Связи резолвятся отдельным
+        проходом сразу после ``decode()``, когда все узлы уже существуют.
 
         Returns:
             Список стартовых узлов (без входящих связей) — их подхватывает ProjectManager.
         """
         with open(filepath, "r", encoding="utf-8") as f:
-            nodes_data = json.load(f)
+            nodes = [node for node in self.decode(f.read()) if node is not None]
 
-        old_to_new: dict = {}  # сохранённый tag -> tag воссозданного узла
-        rebuilt: list = []  # (obj, node) в порядке файла
+        for receiver_tag, inputs in self.pending_links:
+            for link in inputs:
+                self._restore_link(receiver_tag, link)
 
-        for obj in nodes_data:
-            node = self._rebuild_node(obj, old_to_new)
-            if node is not None:
-                rebuilt.append((obj, node))
+        return [node for node in nodes if not node.incoming]
 
-        for obj, node in rebuilt:
-            for link in obj.get("inputs", []):
-                self._restore_link(old_to_new, node.node_tag, link)
-
-        return [node for obj, node in rebuilt if not obj.get("inputs")]
-
-    def _rebuild_node(self, obj: dict, old_to_new: dict):
-        """Строит один узел по сериализованному словарю (без связей — их ставит load вторым проходом)."""
+    def _object_hook(self, obj: dict):
+        """
+        Хук ``json.JSONDecoder``: вызывается для каждого разобранного JSON-объекта.
+        Узлом считаем только словарь с ``__type__ == "node"`` — словари параметров и
+        описания связей пропускаем как есть, их уже обработал вложенный разбор.
+        """
         if obj.get("__type__") != "node":
-            return None
+            return obj
 
+        return self._rebuild_node(obj)
+
+    def _rebuild_node(self, obj: dict):
+        """Строит один узел по сериализованному словарю (без связей — их ставит load вторым проходом)."""
         annotation = self.resolve_annotation(obj["label"])
         if annotation is None:
             logger.error(f"Неизвестный тип узла: {obj['label']}")
@@ -92,7 +97,10 @@ class ProjectDecoder:
         dpg.set_item_pos(node_tag, obj["position"])
         self._apply_parameters(node, obj.get("parameters", {}))
 
-        old_to_new[obj["tag"]] = node_tag
+        self.old_to_new[obj["tag"]] = node_tag
+        if obj.get("inputs"):
+            self.pending_links.append((node.node_tag, obj["inputs"]))
+
         return node
 
     def _apply_parameters(self, node, parameters: dict):
@@ -121,9 +129,9 @@ class ProjectDecoder:
                 return attr
         return None
 
-    def _restore_link(self, old_to_new: dict, receiver_tag: str | int, link: dict):
+    def _restore_link(self, receiver_tag: str | int, link: dict):
         """Восстанавливает одну входящую связь узла по описанию из его поля inputs."""
-        sender_tag = old_to_new.get(link["sender"])
+        sender_tag = self.old_to_new.get(link["sender"])
         if sender_tag is None:
             logger.warning(
                 "Невозможно восстановить связь: отправитель отсутствует в проекте"
