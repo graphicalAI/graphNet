@@ -89,3 +89,44 @@ def test_build_node_correct_label(env, setup_logger):
             )
 
     assert dpg.get_item_label(node_id) == "MyTestLabel"
+
+def test_compile_graph(env, setup_logger):
+    builder = NodeBuilder({}, lambda x: x)
+    
+    with dpg.window() as win_id:
+        with dpg.node_editor(tag="node_editor") as editor_id:
+            node_id_1 = builder.build_node(
+                NodeAnnotation(
+                    label="Node1",
+                    node_type=AbstractNode,
+                    logic=lambda x: x,
+                    annotations={}
+                ),
+                editor_id
+            )
+            node_id_2 = builder.build_node(
+                NodeAnnotation(
+                    label="Node2",
+                    node_type=AbstractNode,
+                    logic=lambda x: x,
+                    annotations={}
+                ),
+                editor_id
+            )
+
+    node1 = get_userdata(node_id_1)
+    node2 = get_userdata(node_id_2)
+    
+    # Mock compile logic
+    node1.compile = lambda kwargs=None: True
+    node2.compile = lambda kwargs=None: True
+    
+    visited = builder.compile_graph([node1, node2])
+    
+    assert node1 in visited
+    assert node2 in visited
+
+def test_raise_error(env, setup_logger):
+    builder = NodeBuilder({}, lambda x: x)
+    # just test it doesn't crash when creating error window
+    builder.raise_error("Test error", "Test type")

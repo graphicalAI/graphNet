@@ -5,10 +5,10 @@ from Src.node_builder import NodeBuilder
 from Src.Logging import logging, Logger
 from Src.Config.node_list import node_list, NodeAnnotation
 from Src.Config.Annotations import ANode
+from Src.Utils.serialization.project_manager import ProjectManager
 from Src.Utils import lateinit, get_userdata, set_userdata, clear_userdata
 from Src.Managers import EventManager, ThemeManager
 from Src.Enums import EventType, Themes
-
 
 
 class NodeEditor:
@@ -18,10 +18,11 @@ class NodeEditor:
     Attributes:
         logger: Logger - логировщик
         builder: NodeBuilder - построитель узлов
-        size_manager: SizeManager - менеджер размеров и шрифтов
+        project_manager: ProjectManager - менеджер сохранения/загрузки проекта
     '''
     __logger: Logger = lateinit(logging(), 'main')
     builder: NodeBuilder
+    project_manager: ProjectManager
     events: EventManager = lateinit(EventManager)
     themes: ThemeManager = lateinit(ThemeManager)
     __stage_tag: str | int
@@ -33,7 +34,7 @@ class NodeEditor:
     def get_mouse_pos(self):
         # Реализовать создание нода, через обычные координаты мыши не получится
         # потому что координаты в node_editor отличаются от координат мыши
-        # поэтому координаты размещения нового нода рассчитываются относительно уже стоящего нода (input_node)
+        # поэтому координаты размещения нового нода рассчитываются относительно уже стоящего
         pos = dpg.get_mouse_pos(local=False)
         ref_node = dpg.get_item_children("node_editor", slot=1)[0]
         ref_screen_pos = dpg.get_item_rect_min(ref_node)
@@ -58,7 +59,17 @@ class NodeEditor:
         self.__group_tag = dpg.generate_uuid()
         self.__start_nodes = []
 
+        self.project_manager = ProjectManager("node_editor", self.builder, self.__start_nodes, self.link_callback)
+
         self.events.add(EventType.VIEWPORT_RESIZE, self.on_viewport_resize_callback)
+
+        with dpg.file_dialog(directory_selector=False, show=False, callback=self._on_save_file_selected, tag="save_project_dialog", width=600, height=400):
+            dpg.add_file_extension(".json", color=(255, 255, 0, 255))
+            dpg.add_file_extension(".*")
+
+        with dpg.file_dialog(directory_selector=False, show=False, callback=self._on_load_file_selected, tag="load_project_dialog", width=600, height=400):
+            dpg.add_file_extension(".json", color=(0, 255, 0, 255))
+            dpg.add_file_extension(".*")
 
         with dpg.stage(tag=self.__stage_tag):
             # Делим окно на 2, чтоб слева были блоки, а справа конструктор графа
@@ -76,8 +87,15 @@ class NodeEditor:
                         input_id = self.builder.build_input("node_editor")
                         self.__start_nodes.append(get_userdata(input_id))
 
-                    dpg.add_button(label="Запустить",
-                                   callback = lambda: self.builder.compile_graph(self.__start_nodes))
+                    with dpg.group(horizontal=True):
+                        dpg.add_button(label="Запустить",
+                                       callback = lambda: self.builder.compile_graph(self.__start_nodes))
+                        dpg.add_button(label="Сохранить проект",
+                                      callback = lambda: dpg.show_item("save_project_dialog"))
+                        dpg.add_button(label="Загрузить проект",
+                                      callback = lambda: dpg.show_item("load_project_dialog"))
+                        dpg.add_button(label="Очистить доску",
+                                      callback = lambda: self.project_manager.clear_board(recreate_input=True))
 
         self.themes.apply("node_editor", Themes.DEFAULT)
         self.on_viewport_resize_callback()
@@ -272,3 +290,21 @@ class NodeEditor:
             node_pos[0] += (node_pos[0] - pos[0]) * zoom_ratio
             node_pos[1] += (node_pos[1] - pos[1]) * zoom_ratio
             dpg.set_item_pos(node_id, node_pos)
+
+
+    def _on_save_file_selected(self, sender: str | int, app_data: dict):
+        '''
+        Callback для файлового менеджера при сохранении проекта.
+        '''
+        filepath = app_data['file_path_name']
+        self.__logger.info(f"Сохранение в файл: {filepath}")
+        self.project_manager.save_project(filepath)
+
+
+    def _on_load_file_selected(self, sender: str | int, app_data: dict):
+        '''
+        Callback для файлового менеджера при выгрузке (загрузке) проекта.
+        '''
+        filepath = app_data['file_path_name']
+        self.__logger.info(f"Загрузка из файла: {filepath}")
+        self.project_manager.load_project(filepath)

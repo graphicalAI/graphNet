@@ -29,3 +29,4 @@ class ABoolean(Annotation):
         
         dpg.set_value(input_id, value)
         return True
+  

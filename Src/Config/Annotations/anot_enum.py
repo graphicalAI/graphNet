@@ -64,3 +64,4 @@ class AEnum(Annotation):
 
         dpg.set_value(input_id, value.value)
         return True
+    
