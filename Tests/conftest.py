@@ -3,6 +3,7 @@ import json
 import dearpygui.dearpygui as dpg
 
 from Src.Managers.theme_manager import ThemeManager
+from Src.Managers.event_manager import EventManager
 from Src.Logging.logger_factory import Logger_factory
 from Src.node_editor import NodeEditor
 
@@ -49,6 +50,11 @@ def env(dpg_session):
 
     manager._ThemeManager__created_themes.clear()
     manager._ThemeManager__item_themes.clear()
+    events = EventManager()
+    events._EventManager__global_handler_registry = None
+    events._EventManager__global_calls.clear()
+    events._EventManager__items_calls.clear()
+    events._EventManager__viewport_calls.clear()
 
 
 @pytest.fixture()

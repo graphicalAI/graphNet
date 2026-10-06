@@ -26,10 +26,68 @@ def test_drop_callback(node_editor):
 
     nodes_count = len(dpg.get_item_children("node_editor", slot=1))
 
-    node_editor.drop_callback("node_editor", btn)
+    node_id = node_editor.drop_callback("node_editor", btn)
     assert dpg.get_item_pos(node_editor._NodeEditor__start_nodes[-1].node_tag) == [8,8]
     assert len(dpg.get_item_children("node_editor", slot=1)) == nodes_count + 1
-    assert dpg.get_item_label(dpg.get_item_children("node_editor", slot=1)[-1]) == "Example"
+    assert dpg.get_item_children("node_editor", slot=1)[0] == node_id
+    assert dpg.get_item_label(node_id) == "Example"
+
+
+def test_hovered_nodes_input_order(node_editor, monkeypatch):
+    node = NodeAnnotation(
+                label="Example",
+                node_type=AbstractNode,
+                logic = lambda x:x,
+                annotations={}
+                )
+
+    node_id1 = node_editor.builder.build_node(node, "node_editor")
+    node_id2 = node_editor.builder.build_node(node, "node_editor")
+    hovered_node = node_id1
+    monkeypatch.setattr(dpg, "is_item_hovered", lambda item: item == hovered_node)
+
+    click_handler = next(
+        item for item in dpg.get_all_items()
+        if dpg.get_item_type(item) == "mvAppItemType::mvMouseClickHandler"
+    )
+    dpg.get_item_callback(click_handler)(0, None)
+
+    node_order = dpg.get_item_children("node_editor", slot=1)
+    assert node_order[0] == node_id1
+
+    hovered_node = node_id2
+    release_handler = next(
+        item for item in dpg.get_all_items()
+        if dpg.get_item_type(item) == "mvAppItemType::mvMouseReleaseHandler"
+    )
+    dpg.get_item_callback(release_handler)(0, None)
+
+    node_order = dpg.get_item_children("node_editor", slot=1)
+    assert node_order[:2] == [node_id2, node_id1]
+
+
+def test_input_order_preserves_links(node_editor, monkeypatch):
+    with dpg.node(parent="node_editor") as lower:
+        lower_pin = dpg.add_node_attribute(attribute_type=dpg.mvNode_Attr_Output)
+    with dpg.node(parent="node_editor") as upper:
+        upper_pin = dpg.add_node_attribute(attribute_type=dpg.mvNode_Attr_Input)
+    link = dpg.add_node_link(lower_pin, upper_pin, parent="node_editor")
+    nodes = dpg.get_item_children("node_editor", slot=1)
+    monkeypatch.setattr(dpg, "is_item_hovered", lambda item: item == upper)
+    move_handler = next(item for item in dpg.get_all_items()
+                        if dpg.get_item_type(item) == "mvAppItemType::mvMouseMoveHandler")
+
+    dpg.get_item_callback(move_handler)(0, None)
+
+    assert dpg.get_item_children("node_editor", slot=1) == [upper] + [n for n in nodes if n != upper]
+    assert dpg.get_item_children("node_editor", slot=0) == [link]
+
+
+def test_pointer_outside_nodes_preserves_input_order(node_editor, monkeypatch):
+    nodes = dpg.get_item_children("node_editor", slot=1)
+    monkeypatch.setattr(dpg, "is_item_hovered", lambda item: False)
+    node_editor._NodeEditor__sync_node_input_order(0, None)
+    assert dpg.get_item_children("node_editor", slot=1) == nodes
 
 
 def test_link_callback(node_editor):

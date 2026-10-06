@@ -79,6 +79,10 @@ class NodeEditor:
                     dpg.add_button(label="Запустить",
                                    callback = lambda: self.builder.compile_graph(self.__start_nodes))
 
+        self.events.add(EventType.MOUSE_MOVE, self.__sync_node_input_order)
+        self.events.add(EventType.MOUSE_CLICK, self.__sync_node_input_order, button=dpg.mvMouseButton_Left)
+        self.events.add(EventType.MOUSE_RELEASE, self.__sync_node_input_order, button=dpg.mvMouseButton_Left)
+
         self.themes.apply("node_editor", Themes.DEFAULT)
         self.on_viewport_resize_callback()
 
@@ -89,6 +93,25 @@ class NodeEditor:
         '''
         if dpg.does_item_exist('node_editor'):
             dpg.configure_item('node_editor', height=dpg.get_viewport_height()*0.9)
+
+
+    def __promote_node_for_input(self, node_id: str | int):
+        nodes = dpg.get_item_children("node_editor", slot=1)
+        if nodes[0] == node_id: return
+        nodes.remove(node_id)
+        nodes.insert(0, node_id)
+        dpg.reorder_items("node_editor", 1, nodes)
+
+
+    def __sync_node_input_order(self, sender, app_data):
+        if not dpg.does_item_exist("node_editor"):
+            return
+
+        nodes = dpg.get_item_children("node_editor", slot=1)
+        for node in nodes:
+            if dpg.is_item_hovered(node):
+                self.__promote_node_for_input(node)
+                break
 
 
     def drop_callback(self, sender: str | int, app_data: str | int) -> str | int:
@@ -108,6 +131,7 @@ class NodeEditor:
         node_data: NodeAnnotation = get_userdata(app_data)
         node_id = self.builder.build_node(node_data, parent="node_editor")
         dpg.set_item_pos(node_id, pos)
+        self.__promote_node_for_input(node_id)
 
         # Мы только создали узел и у него ещё нет связей
         self.__start_nodes.append(get_userdata(node_id))
