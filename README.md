@@ -45,9 +45,9 @@ You can run **graphNet** either as a standalone pre-compiled application or dire
 This is the easiest way for Windows users who do not want to install Python or set up a command-line environment.
 
 1. Go to the **Releases** section on the right side of this GitHub repository.
-2. Download the latest `graphNet.zip` (or `graphNet.exe`) archive.
+2. Download the latest `GraphNet-Windows-x64.zip` archive.
 3. Extract the archive to any folder on your computer.
-4. Double-click **`graphNet.exe`** to launch the application.
+4. Double-click **`GraphNet/GraphNet.exe`** to launch the application. Keep the complete folder.
 
 ---
 
@@ -119,7 +119,7 @@ If you want to compile your own `.exe` file after making changes to the source c
 ```bash
 make build
 ```
-*The compiled executable will be placed in the `dist/` directory with all assets and configs embedded.*
+*Distribute the complete `dist/GraphNet` directory with its dependencies and resources.*
 
 ---
 
@@ -161,9 +161,9 @@ make build
 Этот способ наиболее удобен для пользователей Windows, которым не требуется изменять код или настраивать окружение Python.
 
 1. Перейдите в раздел **Releases** (Релизы) в правой части страницы этого репозитория.
-2. Скачайте последнюю версию архива `graphNet.zip` (или файл `graphNet.exe`).
+2. Скачайте последнюю версию архива `GraphNet-Windows-x64.zip`.
 3. Распакуйте архив в любую удобную папку на компьютере.
-4. Запустите файл **`graphNet.exe`** двойным кликом.
+4. Запустите файл **`GraphNet/GraphNet.exe`** двойным кликом. Сохраните всю папку.
 
 ---
 
@@ -235,4 +235,4 @@ uv run coverage report
 ```bash
 make build
 ```
-*Собранное приложение со всеми ресурсами и конфигурациями логгера будет сохранено в папку `dist/`.*
+*Распространяйте всю папку `dist/GraphNet` с зависимостями и ресурсами.*

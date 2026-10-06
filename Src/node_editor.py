@@ -87,7 +87,7 @@ class NodeEditor:
         '''
         Callback для изменения размера node_editor'a
         '''
-        if dpg.does_item_exist('node_editor'):
+        if dpg.is_viewport_ok() and dpg.does_item_exist('node_editor'):
             dpg.configure_item('node_editor', height=dpg.get_viewport_height()*0.9)
 
 

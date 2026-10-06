@@ -1,0 +1,56 @@
+name: Windows application
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.head.ref == 'develop' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --frozen --dev
+      - name: Build application
+        run: uv run --frozen pyinstaller --noconfirm --onedir --windowed --name GraphNet --add-data Assets:Assets main.py
+      - name: Start application outside checkout
+        shell: pwsh
+        run: |
+          $executable = (Resolve-Path 'dist/GraphNet/GraphNet.exe').Path
+          $process = Start-Process $executable -ArgumentList '--smoke-test' -WorkingDirectory $env:RUNNER_TEMP -PassThru
+          if (-not $process.WaitForExit(240000)) {
+            $process.Kill()
+            throw 'GraphNet startup timed out'
+          }
+          if ($process.ExitCode -ne 0) { throw "GraphNet exited with $($process.ExitCode)" }
+      - name: Archive application
+        run: Compress-Archive -Path dist/GraphNet -DestinationPath dist/GraphNet-Windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GraphNet-Windows-x64
+          path: dist/GraphNet-Windows-x64.zip
+      - name: Publish release
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: >-
+          gh release create "build-$env:RELEASE_SHA" dist/GraphNet-Windows-x64.zip
+          --target "$env:RELEASE_SHA" --title 'GraphNet Windows'
+          --notes 'Распакуйте архив и запустите GraphNet/GraphNet.exe.'

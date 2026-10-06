@@ -22,6 +22,7 @@ testpaths = ["Tests"]
 dev = [
     "coverage>=7.14.2",
     "pytest>=9.1.1",
+    "pyinstaller==6.22.3",
 ]
 
 [tool.coverage.run]
