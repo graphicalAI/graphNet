@@ -45,8 +45,7 @@ class Logger_factory:
         '''
         if 'filename' in config:
             config['filename'] = config['filename'].format(curdata=datetime.now().strftime(config['datefmt']))
-
-        Path(config['filename']).parent.mkdir(exist_ok=True)
+            Path(config['filename']).parent.mkdir(parents=True, exist_ok=True)
 
         self.config = config
         logging.basicConfig(**self.config)
