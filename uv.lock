@@ -222,9 +222,9 @@ wheels = [
 ]
 
 [[package]]
-name = "graphnet"
+name = "graphnet-constructor"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "dearpygui" },
     { name = "librosa" },
@@ -249,7 +249,7 @@ requires-dist = [
     { name = "numpy", specifier = "<2.2.0" },
     { name = "pillow", specifier = ">=12.0.0" },
     { name = "pydot", specifier = ">=4.0.1" },
-    { name = "tensorflow", specifier = ">=2.19.0" },
+    { name = "tensorflow", specifier = "==2.19.0" },
 ]
 
 [package.metadata.requires-dev]

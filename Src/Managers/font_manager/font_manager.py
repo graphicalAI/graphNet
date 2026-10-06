@@ -19,7 +19,7 @@ class FontManager:
     default: FontUnit
 
 
-    def __init__(self, path_config: Path):
+    def __init__(self, path_config: Path, base_path: Path = None):
         if not path_config.exists():
             self.__logger.error(f"Не существует конфигационного файла {path_config}")
             return
@@ -29,6 +29,8 @@ class FontManager:
         self.default = None
         for font_name, font_config in config.items():
 
+            if base_path is not None:
+                font_config['path'] = str(base_path / font_config['path'])
             font_config['sizes'].sort()
             font_ids = [dpg.generate_uuid() for _ in font_config['sizes']]
 

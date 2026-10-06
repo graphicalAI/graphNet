@@ -112,6 +112,14 @@ We are actively looking for passionate developers to join the **graphNet** core 
 
 ---
 
+### Install with pip
+
+After the package is published:
+```bash
+python -m pip install graphnet-constructor
+graphnet
+```
+
 ## 🛠️ Building from Source (.EXE compilation)
 
 If you want to compile your own `.exe` file after making changes to the source code, you can use the configured Makefile:
@@ -227,6 +235,14 @@ uv run coverage report
 3. **Решить тестовое:** Выполнить небольшое практическое тестовое задание для демонстрации ваших навыков.
 
 ---
+
+### Установка через pip
+
+После публикации пакета:
+```bash
+python -m pip install graphnet-constructor
+graphnet
+```
 
 ## 🛠️ Сборка исполняемого файла (.EXE из исходников)
 

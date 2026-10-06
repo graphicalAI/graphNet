@@ -6,6 +6,7 @@ import dearpygui.dearpygui as dpg
 from Src.Enums import Themes
 from Src.Enums.dpg_types import DPGType
 from Src.Logging import logging
+from Src.resources import resource_path
 from Src.node_editor import NodeEditor
 from Src.Managers import EventManager, ThemeManager, FontManager, SizeManager
 from Src.Enums import EventType
@@ -46,7 +47,7 @@ class App:
         dpg.create_context()
         dpg.create_viewport(title=self.title)
 
-        self.font_manager = FontManager(Path(font_path))
+        self.font_manager = FontManager(Path(font_path), resource_path("").parent)
         self.theme_manager = ThemeManager(Path(themes_path))
         self.event_manager = EventManager()
         self.__last_zoom_time = 0.0
@@ -60,11 +61,11 @@ class App:
 
     def _setup_logging(self):
         """Настраивает систему логирования."""
-        logging(logging.open_config("Assets/logger_config.json", False))
+        logging(logging.open_config(resource_path("logger_config.json"), False))
 
-        debug_config = logging.open_config('Assets/logger_debug.json')
-        group_config = logging.open_config('Assets/logger_group.json')
-        stream_config = logging.open_config('Assets/logger_stream.json')
+        debug_config = logging.open_config(resource_path("logger_debug.json"))
+        group_config = logging.open_config(resource_path("logger_group.json"))
+        stream_config = logging.open_config(resource_path("logger_stream.json"))
 
         self.logger = logging()('main', group_config)
         logging()('nodes', group_config | debug_config)
