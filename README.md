@@ -77,6 +77,8 @@ uv run main.py
 
 ---
 
+Image datasets can be loaded from class folders or a CSV keyed by file path. See [Image dataset and the MNIST example](docs/image-dataset.md).
+
 ## 🧪 Testing & Coverage
 
 The project uses **pytest** for automated testing. Thanks to the configuration in `pyproject.toml`, you do not need to manually configure `PYTHONPATH` or test directories.
@@ -192,6 +194,8 @@ uv run main.py
 *`uv` автоматически создаст виртуальное окружение, загрузит необходимую версию Python (>=3.12.0), установит зависимости (Dear PyGui, NumPy, Pillow, PyDot, TensorFlow) и запустит проект.*
 
 ---
+
+Изображения и разметка загружаются одним узлом **Image dataset**: из папок классов или CSV с путями файлов. См. [инструкцию и проверку на MNIST](docs/image-dataset.md).
 
 ## 🧪 Тестирование и покрытие (Coverage)
 

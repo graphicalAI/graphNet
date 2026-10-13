@@ -235,6 +235,7 @@ class NodeEditor:
 
         if node in self.__start_nodes: self.__start_nodes.remove(node)
 
+        node.dispose()
         clear_userdata(node_id)
 
         del node

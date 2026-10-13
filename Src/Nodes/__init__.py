@@ -4,6 +4,7 @@ from Src.Nodes.input_layer_node import InputLayerNode
 from Src.Nodes.data_node import DataNode
 
 from Src.Nodes.shape_node import ShapeNode
+from Src.Nodes.image_dataset_node import ImageDatasetNode
 
 from Src.Nodes.compile_node import CompileNode
 from Src.Nodes.utils_node import UtilsNode

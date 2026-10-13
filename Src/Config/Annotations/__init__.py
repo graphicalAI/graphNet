@@ -3,6 +3,8 @@ from Src.Config.Annotations.aparam import AParam
 
 from Src.Config.Annotations.anot_bool import ABoolean
 from Src.Config.Annotations.anot_file import AFile
+from Src.Config.Annotations.anot_path import APath
+from Src.Config.Annotations.anot_image_dataset import AImageDatasetPreview
 from Src.Config.Annotations.anot_float import AFloat
 from Src.Config.Annotations.anot_integer import AInteger
 from Src.Config.Annotations.anot_string import AString

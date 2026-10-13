@@ -76,6 +76,11 @@ class AbstractNode(ABC):
         return self.node_tag
 
 
+    def dispose(self):
+        """Release UI resources owned outside the node subtree."""
+        pass
+
+
     def compile(self, kwargs: dict = None) -> bool:
         '''
         Основной метод нодов, содержащий логику их работы. Тут создаются слои нейронной сети, проходит обучение и т.д. В зависимости от ноды, будет разная логика.
