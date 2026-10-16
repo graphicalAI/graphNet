@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 
@@ -6,28 +5,35 @@ from app import App
 
 from Src.Logging import logging
 
-# Assets live next to the sources in development and inside sys._MEIPASS in a
-# frozen build. Some of them are referenced from the configuration by relative
-# path (fonts_config.json names the .ttf), so the process has to look there
-# while App is constructed rather than where it happens to be started from.
+# Ресурсы лежат рядом с исходниками при разработке и внутри sys._MEIPASS в
+# собранном приложении. Часть из них названа относительными путями в
+# конфигурации (fonts_config.json называет .ttf), поэтому пути разрешаются
+# здесь, один раз, а не через смену рабочего каталога: смена каталога
+# увела бы за собой и логи, а писать их внутрь установленного приложения
+# нельзя.
 BASE_PATH = Path(getattr(sys, '_MEIPASS', '.'))
 
-if __name__ == "__main__":
-    os.chdir(BASE_PATH)
 
+def asset(name: str) -> str:
+    return str(BASE_PATH / name)
+
+
+if __name__ == "__main__":
     my_app = App(
         title="GraphNet",
-        logger_config_path="Assets/logger_config.json",
-        font_path="Assets/fonts_config.json",
-        themes_path="Assets/themes.json",
+        logger_config_path=asset("Assets/logger_config.json"),
+        font_path=asset("Assets/fonts_config.json"),
+        themes_path=asset("Assets/themes.json"),
+        setup="--smoke-test" not in sys.argv,
     )
 
     if "--smoke-test" in sys.argv:
-        # Constructing App already imports every dependency, loads the themes
-        # and builds the whole node editor, so reaching this point means the
-        # frozen bundle resolved. App.run() then blocks in the GUI event loop
-        # until the window is closed, which never happens on a build runner, so
-        # the build check has to stop here instead.
+        # Содержимое окна собирается и без OpenGL: это создаёт все узлы из
+        # конфигурации, то есть импортирует Keras целиком. App.run() дальше
+        # уходит в цикл событий графики и на сборочной машине не заканчивается,
+        # поэтому проверка бандла обрывается здесь.
+        my_app.build_ui()
+
         logging()("main", {}).warning("SMOKE TEST OK")
         sys.exit(0)
 

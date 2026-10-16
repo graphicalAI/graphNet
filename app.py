@@ -31,9 +31,16 @@ class App:
             logger_config_path: str,
             font_path: str,
             themes_path: str,
+            setup: bool = True,
     ):
         """
         Инициализирует приложение
+
+        Args:
+            setup: если False, приложение инициализируется, но окно не создаётся.
+                Весь код при этом выполняется, включая сборку узлового редактора,
+                но OpenGL не инициализируется. Так собранное приложение можно
+                проверить на машине без графического окружения.
         """
         self.title = title
         self.logger_config_path = logger_config_path
@@ -51,8 +58,21 @@ class App:
         self.event_manager = EventManager()
         self.__last_zoom_time = 0.0
 
-        dpg.setup_dearpygui()
+        if setup:
+            self.setup_window()
 
+    def setup_window(self):
+        """Инициализирует окно и всё, что в нём рисуется."""
+        dpg.setup_dearpygui()
+        self.build_ui()
+
+    def build_ui(self):
+        """Собирает содержимое окна, не создавая окно.
+
+        Создаются все узлы из конфигурации, то есть выполняется весь код
+        приложения, но OpenGL не инициализируется. Это позволяет проверить
+        собранное приложение на машине без графического окружения.
+        """
         self._create_ui()
 
         self.size_manager = SizeManager()

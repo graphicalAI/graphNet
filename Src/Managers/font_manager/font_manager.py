@@ -7,6 +7,7 @@ import dearpygui.dearpygui as dpg
 from Src.Managers.font_manager.font import FontUnit
 from Src.Utils import singleton, lateinit, get_children
 from Src.Logging import logging
+from Src.Logging.logger_factory import Logger_factory
 from Src.Utils import set_userdata, get_userdata
 
 
@@ -32,14 +33,15 @@ class FontManager:
             font_config['sizes'].sort()
             font_ids = [dpg.generate_uuid() for _ in font_config['sizes']]
 
-            font = FontUnit(font_config['path'], font_config['hints'],
+            font = FontUnit(Logger_factory.BASE_PATH / font_config['path'], font_config['hints'],
                             font_name, font_config['sizes'][0], font_ids[0])
             self.fonts[font_name][font_config['sizes'][0]] = font
 
             for size, curr_id, next_id in zip(font_config['sizes'][1:], font_ids[:-1], font_ids[1:]):
 
                 font: FontUnit = get_userdata(curr_id)
-                next_font = FontUnit(Path(font_config['path']).resolve(), font_config['hints'],
+                next_font = FontUnit((Logger_factory.BASE_PATH / font_config['path']).resolve(),
+                                     font_config['hints'],
                                      font_name, size, next_id, prev = font)
                 font.next = next_font
                 self.fonts[font_name][size] = next_font
