@@ -1,0 +1,93 @@
+name: Windows application
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'main.py'
+      - 'app.py'
+      - 'Src/**'
+      - 'Assets/**'
+      - 'scripts/build_exe.py'
+      - 'scripts/verify_bundle.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/windows-build.yml'
+  pull_request:
+    paths:
+      - 'main.py'
+      - 'app.py'
+      - 'Src/**'
+      - 'Assets/**'
+      - 'scripts/build_exe.py'
+      - 'scripts/verify_bundle.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/windows-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          uv sync --frozen
+          uv pip install "pyinstaller>=6.20,<7"
+
+      - name: Build application
+        run: uv run python scripts/build_exe.py
+
+      - name: Verify bundle
+        run: uv run python scripts/verify_bundle.py dist/GraphNet
+
+      - name: Smoke test executable outside the checkout
+        shell: pwsh
+        run: |
+          $executable = (Resolve-Path 'dist/GraphNet/GraphNet.exe').Path
+          # A non-ASCII and non-default working directory: the application has to
+          # find its assets relative to itself, not relative to the caller's cwd.
+          $smokeDirectory = Join-Path $env:RUNNER_TEMP 'GraphNet smoke Кириллица'
+          New-Item -ItemType Directory -Force $smokeDirectory | Out-Null
+          $process = Start-Process -FilePath $executable -ArgumentList '--smoke-test' -WorkingDirectory $smokeDirectory -PassThru
+          if (-not $process.WaitForExit(300000)) {
+            $process.Kill()
+            throw 'GraphNet smoke test did not exit: an import is blocking or the app is showing an error dialog'
+          }
+          if ($process.ExitCode -ne 0) { throw "GraphNet smoke test failed with exit code $($process.ExitCode)" }
+          $log = Get-ChildItem $smokeDirectory -Filter *.log -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $log) { throw 'GraphNet did not write its log' }
+          Write-Host "--- $($log.FullName) ---"
+          Get-Content $log.FullName
+          # --smoke-test exits before App.run() starts the GUI event loop, so the
+          # marker means every import resolved. A log file alone is not enough: it
+          # is created while Src.Logging is imported, which happens long before
+          # the node editor pulls in Keras.
+          if (-not (Select-String -Path $log.FullName -Pattern 'SMOKE TEST OK' -Quiet)) {
+            throw 'GraphNet stopped before startup completed'
+          }
+          Write-Host 'GraphNet imported every dependency and built the node editor'
+
+      - name: Zip application and dependencies
+        shell: pwsh
+        run: Compress-Archive -Path dist/GraphNet -DestinationPath dist/GraphNet-Windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GraphNet-Windows-x64
+          path: dist/GraphNet-Windows-x64.zip
+          if-no-files-found: error
