@@ -26,7 +26,7 @@ from build_exe import dll_library_dirs
 # bundle. The Direct3D/DXGI pair is part of the graphics stack present on every
 # Windows install DearPyGui can run on.
 SYSTEM_DLLS = {
-    "advapi32.dll", "bcrypt.dll", "comdlg32.dll", "crypt32.dll",
+    "advapi32.dll", "bcrypt.dll", "comctl32.dll", "comdlg32.dll", "crypt32.dll",
     "d3d11.dll", "d3d9.dll", "d3dcompiler_47.dll", "dbghelp.dll", "dnsapi.dll",
     "dwmapi.dll", "dxgi.dll", "dxva2.dll",
     "gdi32.dll", "gdi32full.dll", "imm32.dll", "iphlpapi.dll", "kernel32.dll",
@@ -42,6 +42,18 @@ SYSTEM_DLLS = {
 RUNTIME_DLLS = {
     "concrt140.dll", "msvcp140.dll", "ucrtbase.dll", "vcomp140.dll",
     "vcruntime140.dll", "vcruntime140_1.dll",
+}
+
+# Libraries a bundle may reference without shipping, because importing the
+# binary that needs them is optional and handled by its own package.
+#
+# numba's tbbpool is loaded through ``numba.np.ufunc.parallel.select_known_backend``
+# only for the ``tbb`` threading layer, after ``_check_tbb_version_compatible()``
+# turns a missing or too old TBB into ImportError and the layer falls back to
+# another one. Nothing in the locked dependency set ships TBB, so the .pyd is
+# dead weight in the bundle rather than a broken link.
+OPTIONAL_DLLS = {
+    "tbb12.dll",
 }
 
 # Assets the application reads through sys._MEIPASS. Keep in sync with the
@@ -138,6 +150,12 @@ def main() -> int:
             if name in available or name in SYSTEM_DLLS or name in RUNTIME_DLLS:
                 continue
             if name.startswith("api-ms-win-"):
+                continue
+            if name in OPTIONAL_DLLS:
+                # Still visible in the log, so an unexplained entry here is
+                # something to argue about rather than something to rediscover.
+                print(f"note: {binary.relative_to(internal)} imports {library}, "
+                      "which is optional and not bundled")
                 continue
             problems.append(f"{binary.relative_to(internal)} imports {library}, "
                             "which is not in the bundle")

@@ -172,6 +172,44 @@ def test_whitelists_windows_and_vcredist_libraries() -> None:
     assert code == 0, output
 
 
+def test_common_controls_count_as_a_system_library() -> None:
+    """matplotlib's Tk backend pulls in comctl32.dll, which lives in System32."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as temporary:
+        bundle = make_bundle(Path(temporary), {
+            "numpy.libs": {"libnumpy.dll": "KERNEL32.dll"},
+            "scipy.libs": {"libscipy_openblas.dll": "libnumpy.dll"},
+        })
+        internal = bundle / "_internal"
+        (internal / "matplotlib" / "backends").mkdir(parents=True)
+        (internal / "matplotlib" / "backends" / "_tkagg.cp312-win_amd64.pyd").write_bytes(
+            minimal_pe("COMCTL32.dll"))
+        (internal / "tk86t.dll").write_bytes(minimal_pe("COMCTL32.dll"))
+        code, output = run(bundle, ENVIRONMENT)
+    assert code == 0, output
+
+
+def test_optional_libraries_are_reported_but_do_not_fail() -> None:
+    """numba's tbbpool imports tbb12.dll that nothing in the lock ships.
+
+    numba only loads it for the ``tbb`` threading layer and falls back when it
+    is missing, so it must not fail the build, but it must stay visible.
+    """
+    import tempfile
+    with tempfile.TemporaryDirectory() as temporary:
+        bundle = make_bundle(Path(temporary), {
+            "numpy.libs": {"libnumpy.dll": "KERNEL32.dll"},
+            "scipy.libs": {"libscipy_openblas.dll": "libnumpy.dll"},
+        })
+        pool = bundle / "_internal" / "numba" / "np" / "ufunc"
+        pool.mkdir(parents=True)
+        (pool / "tbbpool.cp312-win_amd64.pyd").write_bytes(minimal_pe("tbb12.dll"))
+        code, output = run(bundle, ENVIRONMENT)
+    assert code == 0, output
+    assert "note:" in output
+    assert "tbbpool.cp312-win_amd64.pyd imports tbb12.dll" in output
+
+
 def test_reports_a_bundled_asset_that_is_missing() -> None:
     import tempfile
     with tempfile.TemporaryDirectory() as temporary:
