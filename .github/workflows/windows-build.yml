@@ -1,0 +1,68 @@
+name: Windows application (optree bundle fix)
+
+on:
+  push:
+    branches: [ci/fix-optree-bundle]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "tensorflow==2.19.0" "numpy<2.2.0" "dearpygui>=2.1.0" "pillow>=12.0.0" "pydot>=4.0.1" "pyinstaller>=6.20,<7"
+
+      - name: Build application
+        run: python scripts/build_exe.py
+
+      - name: Verify bundle
+        run: python scripts/verify_bundle.py dist/GraphNet
+
+      - name: Smoke test executable outside checkout
+        shell: pwsh
+        run: |
+          $executable = (Resolve-Path 'dist/GraphNet/GraphNet.exe').Path
+          $smokeDirectory = Join-Path $env:RUNNER_TEMP 'GraphNet smoke Кириллица'
+          New-Item -ItemType Directory -Force $smokeDirectory | Out-Null
+          $process = Start-Process -FilePath $executable -WorkingDirectory $smokeDirectory -PassThru
+          $exited = $process.WaitForExit(180000)
+          if (-not $exited) {
+            # A frozen app that cannot import shows a blocking error dialog
+            # instead of exiting, so treat a timeout as a failure too.
+            $process.Kill()
+            Write-Host 'GraphNet did not exit on its own within 180s (blocked error dialog?)'
+          }
+          $log = Get-ChildItem (Join-Path $smokeDirectory 'Logs') -Filter *.log -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $log) { throw 'GraphNet did not create its log' }
+          Write-Host "--- $($log.Name) ---"
+          Get-Content $log.FullName
+          # The log file is created while Src.Logging is imported, i.e. BEFORE
+          # Src.Nodes pulls in keras. A log that exists but is empty therefore
+          # proves nothing: the startup line is the first thing written after
+          # every import and after the node editor is built.
+          if (-not (Select-String -Path $log.FullName -Pattern 'НАЧАЛИ' -Quiet)) {
+            throw 'GraphNet never reached startup: log has no startup line, so an import failed'
+          }
+          Write-Host 'GraphNet reached startup'
+
+      - name: Zip application and dependencies
+        shell: pwsh
+        run: Compress-Archive -Path dist/GraphNet -DestinationPath dist/GraphNet-Windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GraphNet-Windows-x64-fixed
+          path: dist/GraphNet-Windows-x64.zip
+          if-no-files-found: error
