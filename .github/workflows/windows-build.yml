@@ -36,26 +36,24 @@ jobs:
           $executable = (Resolve-Path 'dist/GraphNet/GraphNet.exe').Path
           $smokeDirectory = Join-Path $env:RUNNER_TEMP 'GraphNet smoke Кириллица'
           New-Item -ItemType Directory -Force $smokeDirectory | Out-Null
-          $process = Start-Process -FilePath $executable -WorkingDirectory $smokeDirectory -PassThru
-          $exited = $process.WaitForExit(180000)
-          if (-not $exited) {
-            # A frozen app that cannot import shows a blocking error dialog
-            # instead of exiting, so treat a timeout as a failure too.
+          $process = Start-Process -FilePath $executable -ArgumentList '--smoke-test' -WorkingDirectory $smokeDirectory -PassThru
+          if (-not $process.WaitForExit(180000)) {
             $process.Kill()
-            Write-Host 'GraphNet did not exit on its own within 180s (blocked error dialog?)'
+            throw 'GraphNet smoke test did not exit: an import is blocking or the app is showing an error dialog'
           }
+          if ($process.ExitCode -ne 0) { throw "GraphNet smoke test failed with exit code $($process.ExitCode)" }
           $log = Get-ChildItem (Join-Path $smokeDirectory 'Logs') -Filter *.log -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $log) { throw 'GraphNet did not create its log' }
           Write-Host "--- $($log.Name) ---"
           Get-Content $log.FullName
-          # The log file is created while Src.Logging is imported, i.e. BEFORE
-          # Src.Nodes pulls in keras. A log that exists but is empty therefore
-          # proves nothing: the startup line is the first thing written after
-          # every import and after the node editor is built.
-          if (-not (Select-String -Path $log.FullName -Pattern 'НАЧАЛИ' -Quiet)) {
-            throw 'GraphNet never reached startup: log has no startup line, so an import failed'
+          # --smoke-test exits before the GUI event loop, so reaching the end of
+          # startup means every import resolved: the log alone is not enough,
+          # because it is created while Src.Logging is imported, before
+          # Src.Nodes pulls in Keras.
+          if (-not (Select-String -Path $log.FullName -Pattern 'SMOKE TEST OK' -Quiet)) {
+            throw 'GraphNet stopped before startup completed'
           }
-          Write-Host 'GraphNet reached startup'
+          Write-Host 'GraphNet imported every dependency and built the node editor'
 
       - name: Zip application and dependencies
         shell: pwsh

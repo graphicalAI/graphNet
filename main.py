@@ -32,6 +32,16 @@ with dpg.window(tag="Prime"):
     main_logger.warning("НАЧАЛИ")
 
 
+if '--smoke-test' in sys.argv:
+    # Exercise every import, the theme manager and the whole node editor, then
+    # stop before the GUI event loop. start_dearpygui() blocks until the window
+    # is closed, so a build check cannot wait for this process to exit: on a
+    # headless runner the event loop never returns.
+    main_logger.warning("SMOKE TEST OK")
+    dpg.destroy_context()
+    sys.exit(0)
+
+
 dpg.setup_dearpygui()
 dpg.show_viewport()
 dpg.set_primary_window("Prime", True)
