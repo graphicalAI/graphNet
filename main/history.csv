@@ -1,0 +1,2 @@
+date,sha,status,tests,coverage,duration_s
+"2026-10-19 05:14 UTC",89aecb3d2167279e1d72f1bcc114f282882a3586,NO_TEST_ENV,"пропущено — в этой ревизии нет pytest/coverage (старый pyproject; нужен мерж из develop)",n/a,0
