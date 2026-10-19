@@ -2,7 +2,7 @@ import unittest
 
 import dearpygui.dearpygui as dpg
 
-from Src.Themes import ThemeManager
+from Src.Managers import ThemeManager
 
 
 class DPGUnitTest(unittest.TestCase):
@@ -13,9 +13,11 @@ class DPGUnitTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.context = dpg.create_context()
+        ThemeManager._created_themes.clear()
+        ThemeManager._item_themes.clear()
         cls.parent = "Tests"
         cls.window = dpg.add_window(tag=cls.parent)
-        ThemeManager.load_themes("Tests/themes.json")
+        ThemeManager.load_themes("Assets/themes.json")
         return super().setUpClass()
     
 

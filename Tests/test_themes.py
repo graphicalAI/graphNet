@@ -1,7 +1,7 @@
 import dearpygui.dearpygui as dpg
 
 from Tests.DPG_test import DPGUnitTest
-from Src.Themes import ThemeManager
+from Src.Managers import ThemeManager
 from Src.Enums import Themes
 
 

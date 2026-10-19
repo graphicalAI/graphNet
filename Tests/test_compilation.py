@@ -36,12 +36,12 @@ class test_compilation(DPGUnitTest):
     def test_compilation(self):
         nodes_in_mock = {
             "Table data": node_list["Data & Preprocessing"]["Import data"][0],
-            "To categorical": node_list["Data & Preprocessing"]["Preprocessing Utils"][0],
+            "To categorical": node_list["Data & Preprocessing"]["Processing Utils"][0],
             "Dense": node_list["Neural Network Layers"]["Full"][0],
             "Compile": node_list["Training"]["General"][0],
             "Fit": node_list["Training"]["General"][1],
             "Predict": node_list["Training"]["General"][2],
-            "Save": node_list["Training"]["Utils"][2]
+            "Save": node_list["Training"]["Utils"][3]
         }
         get_attr = lambda attr_name, node_id: [attribute for attribute in dpg.get_item_children(node_id, slot=1) \
                                                for field in dpg.get_item_children(attribute, slot=1)\
@@ -82,8 +82,8 @@ class test_compilation(DPGUnitTest):
         assert AString.set(dpg.get_item_children(get_attr("files", dataY), slot=1)[0], "./Tests/y.txt")
         assert AInteger.set(dpg.get_item_children(get_attr("num_classes", categorical), slot=1)[0], 2)
         assert AInteger.set(dpg.get_item_children(get_attr("units", dense), slot=1)[0], 2)
-        assert AEnum[Activations].set(dpg.get_item_children(get_attr("activation", dense), slot=1)[0], Activations.softmax)
-        assert AEnum[Losses].set(dpg.get_item_children(get_attr("loss", compile), slot=1)[0], Losses.binary_crossentropy)
+        assert AEnum[Activations].set(dpg.get_item_children(get_attr("activation", dense), slot=1)[0], Activations.SOFTMAX)
+        assert AEnum[Losses].set(dpg.get_item_children(get_attr("loss", compile), slot=1)[0], Losses.BINARY_CROSSENTROPY)
         assert AInteger.set(dpg.get_item_children(get_attr("epochs", fit), slot=1)[0], 10)
 
         # Компилируем

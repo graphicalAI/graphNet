@@ -20,10 +20,8 @@ PYINSTALLER_OPTS = \
 # Дополнительные файлы для включения в сборку
 # Формат для Windows: --add-data "ИСТОЧНИК;НАЗНАЧЕНИЕ"
 # ; - разделитель
-# . - означает корень собранного приложения
 ADD_DATA = \
-	--add-data "notomono-regular.ttf;." \
-	--add-data "Src/Logging/logger_config.json;Src/Logging"
+	--add-data "Assets;Assets"
 
 # Команда по умолчанию, выполняется при вызове "make" без аргументов
 all: build

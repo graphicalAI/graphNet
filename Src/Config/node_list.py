@@ -38,7 +38,8 @@ node_list = {
                 annotations = {
                         "files": Parameter(AttrType.INPUT, AString),
                         "color_mode": Parameter(AttrType.INPUT, AEnum[ColorMode]),
-                        "shape": Parameter(AttrType.OUTPUT, ASequence[AInteger, AInteger, AInteger])
+                        "shape": Parameter(AttrType.OUTPUT, ASequence[AInteger, AInteger, AInteger],
+                                           backfield=ShapeNode.shape)
                         },
                 input=False,
                 output=DataNode
@@ -53,7 +54,8 @@ node_list = {
                         "y_train": Parameter(AttrType.OUTPUT, ANode[DataNode]),
                         "X_test": Parameter(AttrType.OUTPUT, ANode[DataNode]),
                         "y_test": Parameter(AttrType.OUTPUT, ANode[DataNode]),
-                        "shape": Parameter(AttrType.OUTPUT, ASequence[AInteger, AInteger, AInteger])
+                        "shape": Parameter(AttrType.OUTPUT, ASequence[AInteger, AInteger, AInteger],
+                                           backfield=DatasetNode.shape)
                         },
                 input=False,
                 output=False
@@ -107,7 +109,7 @@ node_list = {
                 node_type= LayerNode,
                 logic = LayerNode.layer(layers.Dropout),
                 annotations = {
-                        "rate": Parameter(AttrType.INPUT, AFloat, default=0.8),
+                        "rate": Parameter(AttrType.INPUT, AFloat, default=0.2),
                     },
                 input=LayerNode
             ),
@@ -175,7 +177,6 @@ node_list = {
                 node_type= LayerNode,
                 logic = LayerNode.layer(layers.DepthwiseConv1D),
                 annotations = {
-                        "filters": Parameter(AttrType.INPUT, AInteger, default=1),
                         "kernel_size": Parameter(AttrType.INPUT, AInteger, default=1),
                         "strides": Parameter(AttrType.INPUT, AInteger, default=1),
                         "depth_multiplier": Parameter(AttrType.INPUT, AInteger, default=1),
@@ -190,7 +191,6 @@ node_list = {
                 node_type= LayerNode,
                 logic = LayerNode.layer(layers.DepthwiseConv2D),
                 annotations = {
-                        "filters": Parameter(AttrType.INPUT, AInteger, default=1),
                         "kernel_size": Parameter(AttrType.INPUT, AInteger, default=1),
                         "strides": Parameter(AttrType.INPUT, AInteger, default=1),
                         "depth_multiplier": Parameter(AttrType.INPUT, AInteger, default=1),
@@ -218,7 +218,7 @@ node_list = {
             NodeAnnotation(
                 label= "SeparableConv2D",
                 node_type= LayerNode,
-                logic = LayerNode.layer(layers.SeparableConv1D),
+                logic = LayerNode.layer(layers.SeparableConv2D),
                 annotations = {
                         "filters": Parameter(AttrType.INPUT, AInteger, default=1),
                         "kernel_size": Parameter(AttrType.INPUT, AInteger, default=1),
@@ -236,7 +236,7 @@ node_list = {
                 logic = LayerNode.layer(layers.MaxPooling1D),
                 annotations = {
                         "pool_size": Parameter(AttrType.INPUT, AInteger, default=2),
-                        "strides": Parameter(AttrType.INPUT, AInteger, default=1),
+                        "strides": Parameter(AttrType.INPUT, AInteger, default=2),
                         "padding": Parameter(AttrType.INPUT, AEnum[Padding]),
                     },
                 input=LayerNode
@@ -247,7 +247,7 @@ node_list = {
                 logic = LayerNode.layer(layers.MaxPooling2D),
                 annotations = {
                         "pool_size": Parameter(AttrType.INPUT, ASequence[AInteger, AInteger], default=(2,2)),
-                        "strides": Parameter(AttrType.INPUT, AInteger, default=1),
+                        "strides": Parameter(AttrType.INPUT, ASequence[AInteger, AInteger], default=(2,2)),
                         "padding": Parameter(AttrType.INPUT, AEnum[Padding]),
                     },
                 input=LayerNode
@@ -258,7 +258,7 @@ node_list = {
                 logic = LayerNode.layer(layers.MaxPooling3D),
                 annotations = {
                         "pool_size": Parameter(AttrType.INPUT, ASequence[AInteger, AInteger, AInteger], default=(2,2,2)),
-                        "strides": Parameter(AttrType.INPUT, AInteger, default=1),
+                        "strides": Parameter(AttrType.INPUT, ASequence[AInteger, AInteger, AInteger], default=(2,2,2)),
                         "padding": Parameter(AttrType.INPUT, AEnum[Padding]),
                     },
                 input=LayerNode
@@ -269,7 +269,7 @@ node_list = {
                 logic = LayerNode.layer(layers.AveragePooling1D),
                 annotations = {
                         "pool_size": Parameter(AttrType.INPUT, AInteger, default=2),
-                        "strides": Parameter(AttrType.INPUT, AInteger, default=1),
+                        "strides": Parameter(AttrType.INPUT, AInteger, default=2),
                         "padding": Parameter(AttrType.INPUT, AEnum[Padding]),
                     },
                 input=LayerNode
@@ -280,7 +280,7 @@ node_list = {
                 logic = LayerNode.layer(layers.AveragePooling2D),
                 annotations = {
                         "pool_size": Parameter(AttrType.INPUT, ASequence[AInteger, AInteger], default=(2,2)),
-                        "strides": Parameter(AttrType.INPUT, AInteger, default=1),
+                        "strides": Parameter(AttrType.INPUT, ASequence[AInteger, AInteger], default=(2,2)),
                         "padding": Parameter(AttrType.INPUT, AEnum[Padding]),
                     },
                 input=LayerNode
@@ -291,7 +291,7 @@ node_list = {
                 logic = LayerNode.layer(layers.AveragePooling3D),
                 annotations = {
                         "pool_size": Parameter(AttrType.INPUT, ASequence[AInteger, AInteger, AInteger], default=(2,2,2)),
-                        "strides": Parameter(AttrType.INPUT, AInteger, default=1),
+                        "strides": Parameter(AttrType.INPUT, ASequence[AInteger, AInteger, AInteger], default=(2,2,2)),
                         "padding": Parameter(AttrType.INPUT, AEnum[Padding]),
                     },
                 input=LayerNode

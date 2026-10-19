@@ -38,6 +38,8 @@ class LayerNode(AbstractNode):
         Компанует выход который должен быть у Layer,
         чтоб не городить костыли с обработкой inputs
         '''
-        
-        return LayerResult(layer=layer(**kwargs)(*[arg.layer for arg in args]), 
+        inputs = [arg.layer for arg in args]
+        if len(inputs) > 1: inputs = [inputs]
+
+        return LayerResult(layer=layer(**kwargs)(*inputs), 
                             inputs=set().union(*[arg.inputs for arg in args]))

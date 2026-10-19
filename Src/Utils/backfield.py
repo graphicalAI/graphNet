@@ -8,7 +8,7 @@ class Backfield:
 
 
     def __init__(self, value = None):
-        self = value
+        self.value = value
 
 
     def bind(self, instance, callback: Callable):
@@ -21,10 +21,11 @@ class Backfield:
 
     
     def __get__(self, instance, owner: type = None) -> Any:
-        if not instance: return self
-        return getattr(instance, self.name)
+        if instance is None: return self
+        return getattr(instance, self.name, self.value)
     
 
     def __set__(self, instance, value) -> None:
-        getattr(instance, f"_{self.name}_callback")(value)
+        callback = getattr(instance, f"_{self.name}_callback", None)
+        if callback: callback(value)
         setattr(instance, self.name, value)
