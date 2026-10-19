@@ -1,13 +1,55 @@
 [project]
 name = "graphnet"
 version = "0.1.0"
-description = "Add your description here"
+description = "Visual neural network constructor built with Dear PyGui and Keras"
 readme = "README.md"
 requires-python = "~=3.12.0"
 dependencies = [
-    "dearpygui>=2.1.0",
+    "dearpygui==2.1.1",
     "numpy<2.2.0",
     "pillow>=12.0.0",
     "pydot>=4.0.1",
-    "tensorflow>=2.19.0"
+    # TensorFlow 2.20+ exports LLVM C++ symbols (llvm::PassRegistry and friends)
+    # from libtensorflow_framework.so. Mesa's software rasteriser (swrast_dri.so,
+    # used by llvmpipe when there is no hardware GL driver) links against the
+    # system libLLVM and then binds to TensorFlow's incompatible copy, corrupting
+    # the global LLVM PassRegistry: the app floods "Pass ... is not initialized"
+    # and segfaults on the first rendered frames. 2.19.0 is the version this
+    # project is developed and tested against (see uv.lock).
+    "tensorflow>=2.19.0,<2.20.0"
+]
+
+[project.scripts]
+graphnet = "main:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["Tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["Src"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"main.py" = "main.py"
+"Assets" = "Assets"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/Src",
+    "/Assets",
+    "/Tests",
+    "/main.py",
+    "/README.md",
+    "/pyproject.toml",
+    "/uv.lock",
+    "/LICENSE*",
 ]

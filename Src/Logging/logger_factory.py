@@ -7,6 +7,7 @@ import json
 
 import dearpygui.dearpygui as dpg
 
+from Src.resources import resource_base
 from Src.Utils import singleton
 
 
@@ -19,7 +20,7 @@ class Logger_factory:
     Attributes:
         config: dict - конфигурация для создания логгеров.
     '''
-    BASE_PATH = Path(sys._MEIPASS if hasattr(sys, '_MEIPASS') else '.')
+    BASE_PATH = resource_base()
 
     config: dict
     _loggers = {}
