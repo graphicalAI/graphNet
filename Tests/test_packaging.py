@@ -62,3 +62,17 @@ def test_dearpygui_is_pinned_to_a_working_version():
     # 2.1.1 — последняя версия, в которой не падает удаление узла со связями
     # (в 2.3.x это воспроизводится); обновлять только после ручной проверки.
     assert "dearpygui==2.1.1" in pyproject["project"]["dependencies"]
+
+
+def test_tensorflow_is_bounded_below_2_20():
+    root = Path(__file__).resolve().parents[1]
+    with (root / "pyproject.toml").open("rb") as f:
+        pyproject = tomllib.load(f)
+
+    # Начиная с 2.20 libtensorflow_framework.so экспортирует символы LLVM
+    # (llvm::PassRegistry и др.). Если OpenGL рисует через программный
+    # растеризатор Mesa (swrast_dri.so + системный libLLVM), драйвер
+    # связывается с несовместимой копией LLVM из TensorFlow, реестр проходов
+    # ломается и приложение падает с segfault на первых кадрах. Проверено:
+    # 2.19.0 работает, 2.20.0 и 2.21.0 падают.
+    assert "tensorflow>=2.19.0,<2.20.0" in pyproject["project"]["dependencies"]
