@@ -19,6 +19,29 @@ python3 main.py
 Приложение кросс-платформеное, но основная платформа - Windows 10\11
 
 
+# Установка через pip / uv
+
+Приложение можно установить из репозитория как обычный pip-пакет:
+
+```
+pip install "git+https://github.com/graphicalAI/graphNet.git"
+```
+
+или как изолированный инструмент через [uv](https://docs.astral.sh/uv/):
+
+```
+uv tool install "git+https://github.com/graphicalAI/graphNet.git"
+```
+
+В обоих случаях приложение запускается командой:
+
+```
+graphnet
+```
+
+Проверить установку, не открывая окно, можно командой `graphnet --smoke-test`.
+
+
 # Компиляция приложения в exe 
 
 ## С использованием auto-py-to-exe
