@@ -37,8 +37,12 @@ if '--smoke-test' in sys.argv:
     # stop before the GUI event loop. start_dearpygui() blocks until the window
     # is closed, so a build check cannot wait for this process to exit: on a
     # headless runner the event loop never returns.
+    #
+    # destroy_context() is deliberately not called here: the context has a
+    # viewport but setup_dearpygui() never ran, and dearpygui 2.1.x segfaults on
+    # that call. A normal run never takes this path — it calls
+    # setup_dearpygui() and show_viewport() before destroy_context().
     main_logger.warning("SMOKE TEST OK")
-    dpg.destroy_context()
     sys.exit(0)
 
 
